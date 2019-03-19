@@ -1,24 +1,38 @@
 // Types used in testing JSON serialization. 
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+
 namespace JsonApiTests
 {
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
+    // [JsonObjectContract(typeof(DefaultContractResolver))]
     public class Person {
-        public long Id { get; set; }            // choose as identifier
-        public string Name { get; set; }        // map to "firstname" - manual
-        public string HideMe { get; set; }      // suppress - manual
+        public long Id { get; set; }            // choose as identifier - automatic
+
+        [JsonProperty(PropertyName = "firstname")]
+        public string RenameName { get; set; }        // map to "firstname" - manual
+        [JsonIgnore]
+        public string HiddenName{ get; set; }      // suppress - manual
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public string Field;                    // suppress if default - manual
-        private string Private { get; set; }    // hide - not public
-        private string PrivateField;            // hide - not public
-        public Address Address { get; set; }            // show as embedded structure
-        public Person Manager { get; set; }     // show remote id (and type?) only
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public Address DefaultAddress { get; set; }            // show as embedded structure
+        [JsonProperty(ReferenceLoopHandling = ReferenceLoopHandling.Error)]
+        public Person ReferenceLoopManager { get; set; }     // show remote id (and type?) only
+
+        // Private fields will not be marshaled
+        private string PrivateProperty { get; set; } = "hidden";   // hide - not public
+        private string PrivateField = "hidden";            // hide - not public
     }
 
     public struct Address {
-        public string Street { private get; set; }  // hide - no public getter
+        public string PrivateGetter { private get; set; }  // hide - no public getter
         public string City { get; set; }        // map to "city"
         public State State { get; set; }        // map to "state", display enum values
-        public int? ZipCode;                    // suppress if default value - nullable
-        public string Country { get; set; }    // suppress if default value - nullable 
+        public int DefaultValue;
+        public int? DefaultNullable;                    // suppress if default value - nullable
+        public string DefaultClass { get; set; }    // suppress if default value - class 
     }
 
     public enum State { XX, AL, AR, AK, MI }

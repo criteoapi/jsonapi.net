@@ -1,7 +1,6 @@
 using NUnit.Framework;
-using System.Collections.Generic;
+using JsonApi.Envelope;
 using Newtonsoft.Json;
-// ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable InconsistentNaming
 
 namespace JsonApiTests
@@ -45,46 +44,6 @@ namespace JsonApiTests
         'released': '2019-03-05'
     }
 }";
-        // Set up Resource and Collection types for deserialization
-
-        public class Resource
-        {
-            public Data Data;
-            public Links Links;
-            public Meta Meta;
-        }
-        public class Collection
-        {
-            public Data[] Data;
-            public Links Links;
-            public Meta Meta;
-        }
-
-        /// <summary>
-        /// A data wrapper which will be converted to a generic type
-        /// </summary>
-        public class Data
-        {
-            public string Type;
-            public string Id;
-            public Attributes Attributes; // Replace type by T
-            public Links Links;
-        }
-
-        public class Links : Dictionary<string, string>
-        {
-            
-        }
-
-        public class Meta : Dictionary<string, string>
-        {
-            
-        }
-
-        public class Attributes : Dictionary<string, object>
-        {
-            
-        }
 
         [SetUp]
         public void Setup()
@@ -109,7 +68,7 @@ namespace JsonApiTests
         {
             // Arrange, Act, Assert
             var test = _minimalDoc;
-            Resource result = JsonConvert.DeserializeObject<Resource>(test);
+            var result = JsonConvert.DeserializeObject<ResourceEnvelope<Attributes>>(test);
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Data, Is.Null);
@@ -122,12 +81,14 @@ namespace JsonApiTests
         {
             // Arrange, Act, Assert
             var test = _fullDoc;
-            Resource result = JsonConvert.DeserializeObject<Resource>(test);
+            ResourceEnvelope<Attributes> result = JsonConvert.DeserializeObject<ResourceEnvelope<Attributes>>(test);
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Data, Is.Not.Null);
             Assert.That(result.Links, Is.Not.Null);
+            Assert.That(result.Links["self"], Is.EqualTo("person/1"));
             Assert.That(result.Meta, Is.Not.Null);
+            Assert.That(result.Meta["released"], Is.EqualTo("2019-03-05"));
         }
 
         [Test]
@@ -135,12 +96,13 @@ namespace JsonApiTests
         {
             // Arrange, Act, Assert
             var test = _minimalObjectDoc;
-            Resource result = JsonConvert.DeserializeObject<Resource>(test);
+            ResourceEnvelope<Attributes> result = JsonConvert.DeserializeObject<ResourceEnvelope<Attributes>>(test);
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Data, Is.Not.Null);
             Assert.That(result.Data.Id, Is.EqualTo("1"));
             Assert.That(result.Data.Type, Is.EqualTo("person"));
+            
         }
 
         [Test]
@@ -148,7 +110,7 @@ namespace JsonApiTests
         {
             // Arrange, Act, Assert
             var test = _minimalAttributeDoc;
-            Resource result = JsonConvert.DeserializeObject<Resource>(test);
+            ResourceEnvelope<Attributes> result = JsonConvert.DeserializeObject<ResourceEnvelope<Attributes>>(test);
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Data, Is.Not.Null);
@@ -156,7 +118,14 @@ namespace JsonApiTests
             Assert.That(result.Data.Attributes["firstname"], Is.EqualTo("Bob"));
         }
 
+        [Test]
+        public void DeserializeObject_JsonApiPerson_WrappedPersonObject()
+        {
+            
+        }
+
         // Ensure that all tests run with both single and double quotes
         private static string ConvertQuotes(string s) => s.Replace('\'', '"');
     }
+
 }
