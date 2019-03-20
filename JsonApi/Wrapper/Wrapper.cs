@@ -20,12 +20,12 @@ namespace JsonApi.Wrapper
         /// <summary>
         /// Generic configuration to be applied to types as a default behavior.
         /// </summary>
-        internal TypeConfig DefaultTypeConfig => TypeConfigs[typeof(object)];
+        internal IPolicy DefaultTypeConfig => TypeConfigs[typeof(object)];
 
         /// <summary>
         /// Resource type specific configuration.
         /// </summary>
-        internal IReadOnlyDictionary<Type, TypeConfig> TypeConfigs { get; }
+        internal IReadOnlyDictionary<Type, IPolicy> TypeConfigs { get; }
 
         /// <summary>
         /// The default root of the API used to compute resource paths.
@@ -37,7 +37,7 @@ namespace JsonApi.Wrapper
         /// Wrapper ctor is internal to force the use of <see cref="WrapperBuilder"/> class
         /// and it's fluent interface for configuration.
         /// </summary>
-        internal Wrapper(string serverPath, Dictionary<Type, TypeConfig> typeConfigs)
+        internal Wrapper(string serverPath, Dictionary<Type, IPolicy> typeConfigs)
         {
             // builder will ensure that serverPath is non-empty
             ServerPath = serverPath;

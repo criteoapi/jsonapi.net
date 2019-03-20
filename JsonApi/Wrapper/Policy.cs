@@ -5,6 +5,9 @@ using System.Reflection;
 
 namespace JsonApi.Wrapper
 {
+    /// <summary>
+    /// Policy defines the wrapping behavior for a specific type. 
+    /// </summary>
     public class Policy : IPolicy
     {
         /// <summary>
@@ -33,7 +36,7 @@ namespace JsonApi.Wrapper
         private readonly Dictionary<MemberInfo, string> _replaceName;
 
         /// <summary>
-        /// Create a policy with the specified behavior for a type.
+        /// Create a policy with default behavior for a type.
         /// This constructor is used by <see cref="PolicyBuilder"/>.
         /// </summary>
         /// <param name="type"></param>
@@ -41,9 +44,16 @@ namespace JsonApi.Wrapper
         {
             Type = type;
             _idMembers = type.FindFieldOrPropertyMembers(m => m.Name.EndsWith("Id"));
-
+            _attributeMembers = type.FindFieldOrPropertyMembers(m => !m.Name.EndsWith("Id"));
+            _nonDefaultAttributeMembers = new MemberInfo[]{};
+            _replaceName = _attributeMembers.ToDictionary(m => m, m => m.Name.ToLowerInvariant());
         }
 
+        /// <summary>
+        /// Create a policy with specified behavior for a type.
+        /// This constructor is used by <see cref="PolicyBuilder"/>.
+        /// </summary>
+        /// <param name="type"></param>
         internal Policy(Type type = null, MemberInfo[] idMembers = null, MemberInfo[] attributeMembers = null, MemberInfo[] nonDefaultAttributeMembers = null, Dictionary<MemberInfo, string> replaceName = null)
         {
             Type = type;

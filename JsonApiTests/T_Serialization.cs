@@ -9,7 +9,7 @@ namespace JsonApiTests
     public class T_Serialization
     {
         private Person _person1;
-
+        private Person _person2;
         private ResourceEnvelope<Person> _envelope;
 
         [SetUp]
@@ -21,34 +21,34 @@ namespace JsonApiTests
                 Id = 1,
                 RenameName = "ManagerBob",
             };
+            _person2 = new Person()
+            {
+                Id = 2,
+                RenameName = "Joe",
+                ReferenceLoopManager = _person1,
+                DefaultAddress = new Address()
+                {
+                    PrivateGetter = "3000 Wildwood Court",
+                    City = "Saline",
+                    State = State.MI,
+                    DefaultValue = 0,
+                    DefaultNullable = null,
+                    DefaultClass = null
+                }
+            };
             // _person1.ReferenceLoopManager = _person1;
-
+            var data = new Resource<Person>(_person2)
+            {
+                Type = "person",
+                Id = "1"
+            };
             // Create an envelope
-            _envelope = new ResourceEnvelope<Person>()
+            _envelope = new ResourceEnvelope<Person>(data)
             {
                 Links = new Links()
                 {
                     ["self"] = "person/1" 
                 },
-                Data = new Resource<Person>()
-                {
-                    Type = "person",
-                    Id = "1",
-                    Attributes = new Person()
-                    {
-                        RenameName = "Joe",
-                        ReferenceLoopManager = _person1,
-                        DefaultAddress = new Address()
-                        {
-                            PrivateGetter = "3000 Wildwood Court",
-                            City = "Saline",
-                            State = State.MI,
-                            DefaultValue = 0,
-                            DefaultNullable = null,
-                            DefaultClass = null
-                        }
-                    }
-                }, 
                 Meta = new Meta()
                 {
                     ["released"] = "2019-03-05"

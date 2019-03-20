@@ -1,14 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace JsonApi.Wrapper
 {
     public class PolicyBuilder : IPolicyAsserter
     {
+        private IPolicy _typeConfig;
 
         /// <summary>
         /// The type of the policy being built.
         /// </summary>
         public Type Type { get; }
+
+        public List<IPolicy> Policies { get; }
 
         public PolicyBuilder(Type type)
         {
@@ -17,10 +21,8 @@ namespace JsonApi.Wrapper
 
         public IPolicy Build()
         {
-            return new Policy(typeof(object));
+            return _typeConfig;
         }
-
-
 
         #region IPolicyAsserter implementation
 

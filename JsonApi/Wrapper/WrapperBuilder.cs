@@ -7,21 +7,26 @@ namespace JsonApi.Wrapper
         IExpectDefaultConfigOrTypeConfigWrapperBuilder,
         IExpectTypeConfigWrapperBuilder
     {
+        private readonly Type _defaultType = typeof(object);
+
         /// <summary>
         /// Generic configuration to be applied to types as a default behavior.
         /// </summary>
-        private TypeConfig DefaultTypeConfig { get; set; } = new TypeConfig();
+        private PolicyBuilder DefaultPolicyBuilder =>
+            PolicyBuilders.ContainsKey(_defaultType) 
+                ? PolicyBuilders[_defaultType] 
+                : new PolicyBuilder(_defaultType);
 
         /// <summary>
         /// Resource type specific configuration.
         /// </summary>
-        private Dictionary<Type, TypeConfig> TypeConfigs { get; set; } = new Dictionary<Type, TypeConfig>();
+        private Dictionary<Type, PolicyBuilder> PolicyBuilders { get; } = new Dictionary<Type, PolicyBuilder>();
 
         /// <summary>
         /// The default root of the API used to compute resource paths.
         /// This may be overriden on a per resource basis.
         /// </summary>
-        private string ServerPath { get; set; }
+        private string ServerPath { get; }
 
 
         /// <summary>
@@ -41,7 +46,13 @@ namespace JsonApi.Wrapper
 
         public IExpectTypeConfigWrapperBuilder WithDefaultConfig(Action<IPolicyAsserter> policyAsserter)
         {
-            IPolicyAsserter asserter;
+            var tt = _defaultType;
+            if (!PolicyBuilders.ContainsKey(tt))
+            {
+                PolicyBuilders[tt] = new PolicyBuilder(_defaultType);
+            }
+            IPolicyAsserter asserter = PolicyBuilders[tt];
+
             policyAsserter(asserter);
             return this;
         }
@@ -49,17 +60,25 @@ namespace JsonApi.Wrapper
         public IExpectTypeConfigWrapperBuilder WithTypeConfig<T>(Action<IPolicyAsserter> policyAsserter)
         {
             var tt = typeof(T);
-            if (!TypeConfigs.ContainsKey(tt)) TypeConfigs[tt] = new TypeConfig();
-            TypeConfigs[tt].AddAll(policyAsserter);
+            if (!PolicyBuilders.ContainsKey(tt))
+            {
+                PolicyBuilders[tt] = new PolicyBuilder(typeof(T));
+            }
+            IPolicyAsserter asserter = PolicyBuilders[tt];
+
+            policyAsserter(asserter);
             return this;
         }
 
         public Wrapper Build()
         {
-            TypeConfigs[typeof(object)] = DefaultTypeConfig;
-            return new Wrapper(ServerPath, TypeConfigs);
+            Dictionary<Type, IPolicy> typeConfigs = new Dictionary<Type, IPolicy>();
+            // TODO: Build TypeConfigs from the PolicyBuilders
+            return new Wrapper(ServerPath, typeConfigs);
         }
     }
+
+    // Interfaces used to make fluid API
 
     public interface IExpectDefaultConfigOrTypeConfigWrapperBuilder :
         IExpectTypeConfigWrapperBuilder
