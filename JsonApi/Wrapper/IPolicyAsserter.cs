@@ -8,7 +8,7 @@
         /// use lowercase with hyphens instead of `nameof(T)`, for example use
         /// `hyphen-cased` if the type name is `HyphenCased`.
         /// </summary>
-        IPolicyAsserter HyphenCasedTypes();
+        void HyphenCasedTypes();
 
         /// <summary>
         /// use the plural form of `nameof(T)` as the type and the URI segment
@@ -16,17 +16,17 @@
         /// multi-word   type is pluralized (e.g. `seller-budgets` for
         /// `SellerBudgets`.)
         /// </summary>
-        IPolicyAsserter PluralTypes();
+        void PluralTypes();
 
         /// <summary>
         /// explicitly define the type and URI segment.
         /// </summary>
-        IPolicyAsserter WithType(string name);
+        void WithType(string name);
 
         /// <summary>
         /// explicitly define the attribute that holds the id.
         /// </summary>
-        IPolicyAsserter WithId(string name);
+        void WithId(string name);
 
         #endregion
 
@@ -35,12 +35,12 @@
         /// <summary>
         /// include "self" links in the <see cref="Resource{T}"/> links dictionary
         /// </summary>
-        IPolicyAsserter WithSelfLinks();
+        void WithSelfLinks();
 
         /// <summary>
         /// include "canonical" links in the <see cref="Resource{T}"/> links dictionary
         /// </summary>
-        IPolicyAsserter WithCanonicalLinks();
+        void WithCanonicalLinks();
 
         #endregion
 
@@ -50,12 +50,12 @@
         /// use lower camel case for property and field names, for example
         /// `camelCased` for the property `CamelCased`.
         /// </summary>
-        IPolicyAsserter CamelCasedNames();
+        void CamelCasedNames();
 
         /// <summary>
         /// explicitly use `key` for the property `name`.
         /// </summary>
-        IPolicyAsserter ReplaceName(string name, string key);
+        void ReplaceName(string name, string key);
 
         #endregion
 
@@ -64,23 +64,23 @@
         /// <summary>
         /// if a property or field has its default value, do not show it.
         /// </summary>
-        IPolicyAsserter HideDefaults();
+        void HideDefaults();
 
         /// <summary>
         /// never show this property or field.
         /// </summary>
-        IPolicyAsserter HideName(string name);
+        void HideName(string name);
 
         /// <summary>
         /// if the property or field `name` has its default value, do not show
         /// it.
         /// </summary>
-        IPolicyAsserter HideDefault(string name);
+        void HideDefault(string name);
 
         /// <summary>
         /// if the property or field `name` has its default value show it.
         /// </summary>
-        IPolicyAsserter ShowDefault(string name);
+        void ShowDefault(string name);
 
         #endregion
     }

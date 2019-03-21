@@ -6,9 +6,9 @@ using System.Reflection;
 namespace JsonApi.Wrapper
 {
     /// <summary>
-    /// Policy defines the wrapping behavior for a specific type. 
+    /// Data Transfer Object shared by Policy and PolicyBuilder
     /// </summary>
-    public class Policy : IPolicy
+    public class PolicyData
     {
         /// <summary>
         /// The actual type of T
@@ -16,82 +16,114 @@ namespace JsonApi.Wrapper
         public Type Type { get; }
 
         /// <summary>
+        /// Server root to use for canonical URI of external resources
+        /// </summary>
+        public string ServerPath { get; set; }
+
+        /// <summary>
         /// These members will be used to generate an id value.
         /// </summary>
-        private readonly MemberInfo[] _idMembers;
+        internal MemberInfo[] IdMembers;
 
         /// <summary>
-        /// These members will be exported as attributes, regardless of value
+        /// These members will be exported as attributes (excludes id)
         /// </summary>
-        private readonly MemberInfo[] _attributeMembers;
+        internal MemberInfo[] AttributeMembers;
 
         /// <summary>
-        /// These members will be exported as attributes, only if not default
+        /// These members will be exported as attributes unless value matches object
         /// </summary>
-        private readonly MemberInfo[] _nonDefaultAttributeMembers;
+        internal Dictionary<MemberInfo, object> _nonDefaultAttributeMembers;
 
         /// <summary>
         /// The mapping of member to attribute name.
         /// </summary>
-        private readonly Dictionary<MemberInfo, string> _replaceName;
+        internal Dictionary<MemberInfo, string> _replaceName;
 
-        /// <summary>
-        /// Create a policy with default behavior for a type.
-        /// This constructor is used by <see cref="PolicyBuilder"/>.
-        /// </summary>
-        /// <param name="type"></param>
-        internal Policy(Type type)
+        public PolicyData(Type type)
         {
-            Type = type;
-            _idMembers = type.FindFieldOrPropertyMembers(m => m.Name.EndsWith("Id"));
-            _attributeMembers = type.FindFieldOrPropertyMembers(m => !m.Name.EndsWith("Id"));
-            _nonDefaultAttributeMembers = new MemberInfo[]{};
-            _replaceName = _attributeMembers.ToDictionary(m => m, m => m.Name.ToLowerInvariant());
+            Type = type ?? throw new ArgumentNullException(nameof(type));
         }
+    }
 
+    /// <summary>
+    /// Policy defines the wrapping behavior for a specific type. 
+    /// </summary>
+    public class Policy : IPolicy
+    {
+        private readonly PolicyData _policyData;
+        
         /// <summary>
         /// Create a policy with specified behavior for a type.
-        /// This constructor is used by <see cref="PolicyBuilder"/>.
+        /// This constructor is only used by <see cref="PolicyBuilder"/>.
         /// </summary>
-        /// <param name="type"></param>
-        internal Policy(Type type = null, MemberInfo[] idMembers = null, MemberInfo[] attributeMembers = null, MemberInfo[] nonDefaultAttributeMembers = null, Dictionary<MemberInfo, string> replaceName = null)
+        internal Policy(PolicyData policyData)
         {
-            Type = type;
-            _idMembers = idMembers;
-            _attributeMembers = attributeMembers;
-            _nonDefaultAttributeMembers = nonDefaultAttributeMembers;
-            _replaceName = replaceName;
+            _policyData = policyData;
         }
 
         #region IPolicy implementation
 
+        /// <param name="obj"></param>
         /// <inheritdoc cref="IPolicy"/>
-        public string ResourceType()
+        public string ResourceType(object obj)
         {
-            return Type.Name;
+            return _policyData.Type.Name;
         }
 
+        /// <summary>
+        /// Return the Id from the POCO based on the Type and Identity policies.
+        /// </summary>
+        /// <param name="obj">POCO source</param>
+        /// <returns>A string that will act as the type value.</returns>
         public string ResourceIdentity(object obj)
         {
-            if (_idMembers.Length == 0) throw new InvalidOperationException($"Type {Type} has no identifier members");
+            if (_policyData.IdMembers.Length == 0) throw new InvalidOperationException($"Type {_policyData.Type} has no identifier members");
 
-            var first = _idMembers[0].GetValue(obj).ToString();
-            if (_idMembers.Length == 1) return first;
-            return _idMembers.Aggregate(first, (prev, m) => prev + "." + m.GetValue(obj));
+            var first = _policyData.IdMembers[0].GetValue(obj).ToString();
+            if (_policyData.IdMembers.Length == 1) return first;
+            return _policyData.IdMembers.Aggregate(first, (prev, m) => prev + "." + m.GetValue(obj));
         }
 
-        public IDictionary<string, string> ResourceLinks(object obj)
+        /// <summary>
+        /// Get the links proper to the POCO or null if none
+        /// </summary>
+        /// <param name="obj">POCO source</param>
+        /// <param name="baseUri">base URI for absolute URI paths or null</param>
+        /// <returns>Dictionary of links mapped to URI values</returns>
+        public IDictionary<string, string> ResourceLinks(object obj, string baseUri = null)
         {
+            baseUri = _policyData.ServerPath ?? baseUri ?? "";
+            if (!string.IsNullOrEmpty(baseUri)) baseUri += "/";
             var links = new Dictionary<string, string>();
-            links.Add("canonical", $"{ResourceType()}/{ResourceType()}");
-            return links;
+
+            // TODO: make this conditional
+            links.Add("canonical", $"{baseUri}{ResourceType(obj)}/{ResourceIdentity(obj)}");
+
+            return links.Count > 0 ? links : null;
         }
 
-        public IDictionary<string, string> ResourceMeta(object obj)
+        /// <summary>
+        /// Get the metadata of the POCO or null if none
+        /// </summary>
+        /// <param name="obj">POCO source</param>
+        /// <returns>Dictionary of metadata names mapped to object values</returns>
+        public IDictionary<string, object> ResourceMeta(object obj)
         {
-            return new Dictionary<string, string>(); // TODO: check if meta is object valued
+            var meta = new Dictionary<string, object>();
+
+            // TODO: future use for ETAG, creation date, etc. 
+            meta.Add("meta", "data");
+
+            return meta.Count > 0 ? meta : null;
         }
 
+        /// <summary>
+        /// Get the attributes from the POCO using name mapping and suppression policies.
+        /// Not used for serialization since that is done by Swashbuckle today.
+        /// </summary>
+        /// <param name="obj">POCO source</param>
+        /// <returns>Dictionary of attributes</returns>
         public IDictionary<string, string> Attributes(object obj)
         {
             throw new NotImplementedException();

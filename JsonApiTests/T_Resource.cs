@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System.Collections.Generic;
+using NUnit.Framework;
 using JsonApi.Wrapper;
 using JsonApi.Envelope;
 
@@ -8,7 +9,7 @@ namespace JsonApiTests
     // ReSharper disable once InconsistentNaming
     public class T_Resource
     {
-        // building a wrapper manually
+        // building a wrapper manually.
         private Person _person1;
         private Person _person2;
         private ResourceEnvelope<Person> _envelope;
@@ -48,7 +49,7 @@ namespace JsonApiTests
         }
 
         [Test]
-        public void Resource_WrapPerson_IdAndTypeNull()
+        public void Resource_NewResource_IdAndTypeNull()
         {
             Person p = _person2;
             Resource<Person> rp = new Resource<Person>(p);
@@ -58,14 +59,40 @@ namespace JsonApiTests
         }
 
         [Test]
-        public void Wrapper_WrapPerson_IdAndTypeSet()
+        public void Resource_NewResourceEnvelope_IdAndTypeNull()
         {
             Person p = _person2;
             ResourceEnvelope<Person> rep = new ResourceEnvelope<Person>(p);
             Resource<Person> rp = rep.Data;
 
-            Assert.That(rp.Type, Is.EqualTo("people"));
-            Assert.That(rp.Id, Is.EqualTo("2"));
+            Assert.IsNull(rp.Type);
+            Assert.IsNull(rp.Id);
+        }
+
+        [DatapointSource]
+        public IEnumerable<Person> People
+        {
+            get
+            {
+                Setup();
+                yield return _person2;
+                yield return _person1;
+            }
+        }
+
+        [Theory]
+        public void Wrapper_WrapPerson_IdAndTypeSet(Person p)
+        {
+            Assume.That(p, Is.Not.Null);
+
+            Wrapper wrapper = WrapperBuilder.WithServer("http://api.example.com").Build();
+            var rep = wrapper.Wrap(p);
+            Resource<Person> rp = rep.Data;
+
+            var expectedType = typeof(Person).Name.ToPlural().ToHyphenCase();
+            Assert.That(rp.Type, Is.EqualTo(expectedType));
+            var expectedId = p.Id.ToString();
+            Assert.That(rp.Id, Is.EqualTo(expectedId));
         }
     }
 }

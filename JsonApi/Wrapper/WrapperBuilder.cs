@@ -3,22 +3,50 @@ using System.Collections.Generic;
 
 namespace JsonApi.Wrapper
 {
+    /// <summary>
+    /// A fluent API to create a JSON:API Wrapper.
+    /// </summary>
+    /// <example>
+    ///  JsonApiWrapper = JsonApi.WrapperBuilder
+    ///      .WithServer(rootUri.ToString())
+    ///      .WithDefaultConfig(p => {
+    ///          p.PluralTypes();
+    ///          p.WithId("Id");
+    ///          p.HideDefaults();
+    ///      })
+    ///      .WithTypeConfig&lt;Person>(p => {
+    ///          p.AtUri("people");
+    ///          p.WithId("PersonId");
+    ///          p.ReplaceName("Name","firstname");
+    ///          p.ReplaceName("Last", "lastname");
+    ///          p.HideName("SSN");
+    ///          p.HideName("DateOfBirth");
+    ///      })
+    ///      .WithTypeConfig&lt;Address>(p => {
+    ///          p.ReplaceName("Line1","street");
+    ///          p.ShowDefault("Country");
+    ///      })
+    ///      .Build();
+    /// </example>
     public class WrapperBuilder :
-        IExpectDefaultConfigOrTypeConfigWrapperBuilder,
-        IExpectTypeConfigWrapperBuilder
+        IExpectDefaultConfigOrTypeConfigWrapperBuilder
     {
         private readonly Type _defaultType = typeof(object);
 
         /// <summary>
-        /// Generic configuration to be applied to types as a default behavior.
+        /// Default policy assertions if not specified by <see cref="WithDefaultConfig"/>
         /// </summary>
-        private PolicyBuilder DefaultPolicyBuilder =>
-            PolicyBuilders.ContainsKey(_defaultType) 
-                ? PolicyBuilders[_defaultType] 
-                : new PolicyBuilder(_defaultType);
+        private Action<IPolicyAsserter> _baseConfig = p =>
+        {
+            p.PluralTypes();
+            p.CamelCasedNames();
+            p.HideDefaults();
+            p.WithId("Id"); // TODO: EndsWith("Id") ? 
+        };
 
         /// <summary>
-        /// Resource type specific configuration.
+        /// Builders for resource type specific configuration. The same builder may
+        /// be reused by multiple calls to <see cref="WithTypeConfig{T}"/>.
         /// </summary>
         private Dictionary<Type, PolicyBuilder> PolicyBuilders { get; } = new Dictionary<Type, PolicyBuilder>();
 
@@ -36,6 +64,11 @@ namespace JsonApi.Wrapper
         private WrapperBuilder(string serverPath)
         {
             ServerPath = serverPath;
+
+            // Add a default policy to apply as a base for other types
+            PolicyBuilders[_defaultType] = new PolicyBuilder(_defaultType);
+            var asserter = PolicyBuilders[_defaultType].Asserter;
+            _baseConfig(asserter);
         }
 
         public static IExpectDefaultConfigOrTypeConfigWrapperBuilder WithServer(string serverPath)
@@ -46,13 +79,13 @@ namespace JsonApi.Wrapper
 
         public IExpectTypeConfigWrapperBuilder WithDefaultConfig(Action<IPolicyAsserter> policyAsserter)
         {
-            var tt = _defaultType;
-            if (!PolicyBuilders.ContainsKey(tt))
+            if (!PolicyBuilders.ContainsKey(_defaultType)) // add to existing policy if possible
             {
-                PolicyBuilders[tt] = new PolicyBuilder(_defaultType);
+                PolicyBuilders[_defaultType] = new PolicyBuilder(_defaultType);
             }
-            IPolicyAsserter asserter = PolicyBuilders[tt];
+            IPolicyAsserter asserter = PolicyBuilders[_defaultType].Asserter;
 
+            _baseConfig = policyAsserter; // save base config to apply to specific types
             policyAsserter(asserter);
             return this;
         }
@@ -64,16 +97,22 @@ namespace JsonApi.Wrapper
             {
                 PolicyBuilders[tt] = new PolicyBuilder(typeof(T));
             }
-            IPolicyAsserter asserter = PolicyBuilders[tt];
+            IPolicyAsserter asserter = PolicyBuilders[tt].Asserter;
 
+            _baseConfig(asserter);
             policyAsserter(asserter);
             return this;
         }
 
         public Wrapper Build()
         {
+            //
+            // Build TypeConfigs from the PolicyBuilders
             Dictionary<Type, IPolicy> typeConfigs = new Dictionary<Type, IPolicy>();
-            // TODO: Build TypeConfigs from the PolicyBuilders
+            foreach (KeyValuePair<Type, PolicyBuilder> policyBuilder in PolicyBuilders)
+            {
+                typeConfigs[policyBuilder.Key] = policyBuilder.Value.Build();
+            }
             return new Wrapper(ServerPath, typeConfigs);
         }
     }

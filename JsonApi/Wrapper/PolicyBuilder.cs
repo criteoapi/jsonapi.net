@@ -1,91 +1,127 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace JsonApi.Wrapper
 {
-    public class PolicyBuilder : IPolicyAsserter
+    /// <summary>
+    /// PolicyBuilder generates a single Policy for a type from
+    /// a sequence of IPolicyAsserter calls.
+    /// </summary>
+    public class PolicyBuilder
     {
-        private IPolicy _typeConfig;
+        private readonly PolicyData _policyData;
 
         /// <summary>
-        /// The type of the policy being built.
+        /// The object against which policy assertions are made.
         /// </summary>
-        public Type Type { get; }
+        internal PolicyBuilder.PolicyAsserter Asserter = new PolicyBuilder.PolicyAsserter();
+        
 
-        public List<IPolicy> Policies { get; }
-
-        public PolicyBuilder(Type type)
+        /// <summary>
+        /// Create a default policy builder that acts as the base policy for all types
+        /// </summary>
+        public PolicyBuilder() : this(typeof(object))
         {
-            Type = type;
         }
 
-        public IPolicy Build()
+        /// <summary>
+        /// Create a policy builder for a policy that applies to type 
+        /// </summary>
+        /// <param name="type">type for which policy is being asserted</param>
+        /// <param name="parent">parent policy from which to inherit behavior</param>
+        public PolicyBuilder(Type type, Policy parent = null)
         {
-            return _typeConfig;
+            _policyData = new PolicyData(type);
+            if (parent != null)
+            {
+                // TODO: copy parent policy results to this builder
+            }
+
+            _policyData = new PolicyData(type);
         }
 
-        #region IPolicyAsserter implementation
-
-        public IPolicyAsserter HyphenCasedTypes()
+        public Policy Build()
         {
-            throw new NotImplementedException();
+            var policy = new Policy(_policyData);
+            return policy;
         }
 
-        public IPolicyAsserter PluralTypes()
+        internal class PolicyAsserter : IPolicyAsserter
         {
-            throw new NotImplementedException();
-        }
 
-        public IPolicyAsserter WithType(string name)
-        {
-            throw new NotImplementedException();
-        }
+            #region IPolicyAsserter implementation
 
-        public IPolicyAsserter WithId(string name)
-        {
-            throw new NotImplementedException();
-        }
+            public void HyphenCasedTypes() => _asserts.Add(new HyphenCasedTypesAssertion());
 
-        public IPolicyAsserter WithSelfLinks()
-        {
-            throw new NotImplementedException();
-        }
+            public void PluralTypes() => throw new NotImplementedException();
 
-        public IPolicyAsserter WithCanonicalLinks()
-        {
-            throw new NotImplementedException();
-        }
+            public void WithType(string name) => throw new NotImplementedException();
 
-        public IPolicyAsserter CamelCasedNames()
-        {
-            throw new NotImplementedException();
-        }
+            public void WithId(string name) => throw new NotImplementedException();
 
-        public IPolicyAsserter ReplaceName(string name, string key)
-        {
-            throw new NotImplementedException();
-        }
+            public void WithSelfLinks() => throw new NotImplementedException();
 
-        public IPolicyAsserter HideDefaults()
-        {
-            throw new NotImplementedException();
-        }
+            public void WithCanonicalLinks() => throw new NotImplementedException();
 
-        public IPolicyAsserter HideName(string name)
-        {
-            throw new NotImplementedException();
-        }
+            public void CamelCasedNames() => throw new NotImplementedException();
 
-        public IPolicyAsserter HideDefault(string name)
-        {
-            throw new NotImplementedException();
-        }
+            public void ReplaceName(string name, string key) => throw new NotImplementedException();
 
-        public IPolicyAsserter ShowDefault(string name)
-        {
-            throw new NotImplementedException();
-        }
+            public void HideDefaults() => throw new NotImplementedException();
 
-        #endregion
+            public void HideName(string name) => throw new NotImplementedException();
+
+            public void HideDefault(string name) => throw new NotImplementedException();
+
+            public void ShowDefault(string name) => throw new NotImplementedException();
+
+            #endregion
+
+            #region Assertion Objects
+
+            private List<Assertion> _asserts = new List<Assertion>();
+
+            internal abstract class Assertion
+            {
+                public AssertionType AssertType { get; }
+                public readonly string[] Args;
+
+                protected Assertion(AssertionType type, params string[] args)
+                {
+                    AssertType = type;
+                    Args = args;
+                }
+
+                internal abstract void Execute();
+            }
+
+            internal enum AssertionType
+            {
+                Unknown, Root, Link, Meta, Data, Hide, Rename
+            }
+
+            internal class HyphenCasedTypesAssertion : Assertion
+            {
+                public HyphenCasedTypesAssertion() : base(AssertionType.Root) { }
+
+                internal override void Execute()
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Convert the list of assertions for this type to
+            /// type configuration data.
+            /// </summary>
+            private void ProcessAssertions()
+            {
+                _asserts.ForEach(a => a.Execute());
+            }
+
+            #endregion
+        }
     }
 }

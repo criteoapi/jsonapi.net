@@ -11,8 +11,9 @@ namespace JsonApi.Wrapper
         /// <summary>
         /// Return the resource type from the POCO type based on the Type and Identity policies.
         /// </summary>
+        /// <param name="obj"></param>
         /// <returns>A string that will act as the type value.</returns>
-        string ResourceType();
+        string ResourceType(object obj);
 
         /// <summary>
         /// Return the Id from the POCO based on the Type and Identity policies.
@@ -24,19 +25,22 @@ namespace JsonApi.Wrapper
         /// <summary>
         /// Return a table of links for the POCO based on the Link policies.
         /// </summary>
-        /// <param name="obj"></param>
+        /// <param name="obj">entity whose links are returned</param>
+        /// <param name="baseURI">optional base URI to create absolute links</param>
         /// <returns></returns>
-        IDictionary<string, string> ResourceLinks(object obj);
+        IDictionary<string, string> ResourceLinks(object obj, string baseURI = null);
 
         /// <summary>
         /// Return a table of meta information for the POCO based on the Meta policies.
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        IDictionary<string, string> ResourceMeta(object obj);
+        IDictionary<string, object> ResourceMeta(object obj);
 
         /// <summary>
-        /// Return a table of attributes for the POCO based on the Suppression and Name Handling policies.
+        /// Return a table of attributes for the POCO based on the Suppression and Name
+        /// Handling policies. Attributes that are hidden/suppressed will not appear.
+        /// TODO: Currently not used due to the need for scheme generation by reflection.
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>

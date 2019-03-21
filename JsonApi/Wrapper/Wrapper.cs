@@ -12,6 +12,8 @@ namespace JsonApi.Wrapper
     /// <seealso cref="WrapperBuilder"/>
     public sealed class Wrapper : IWrapper, IUnwrapper
     {
+        private static Type _defaultType = typeof(object);
+
         /// <summary>
         /// The default wrapper. 
         /// </summary>
@@ -20,7 +22,7 @@ namespace JsonApi.Wrapper
         /// <summary>
         /// Generic configuration to be applied to types as a default behavior.
         /// </summary>
-        internal IPolicy DefaultTypeConfig => TypeConfigs[typeof(object)];
+        internal IPolicy DefaultTypeConfig => TypeConfigs[_defaultType];
 
         /// <summary>
         /// Resource type specific configuration.
@@ -46,9 +48,22 @@ namespace JsonApi.Wrapper
             TypeConfigs = typeConfigs;
         }
 
+        private IPolicy GetPolicy(Type type)
+        {
+            return TypeConfigs.TryGetValue(type, out var policy) ? policy : TypeConfigs[_defaultType];
+        }
+
         public IResourceEnvelope<T> Wrap<T>(T entity) where T : class
         {
-            throw new NotImplementedException();
+            var policy = GetPolicy(typeof(T));
+
+            var envelope = new ResourceEnvelope<T>(entity);
+            envelope.Data.Type = policy.ResourceType(entity);
+            envelope.Data.Id = policy.ResourceIdentity(entity);
+            envelope.Data.Links = (Links) policy.ResourceLinks(entity);
+            envelope.Data.Meta = (Meta) policy.ResourceMeta(entity);
+
+            return envelope;
         }
 
         public IResourceCollectionEnvelope<T> Wrap<T>(IEnumerable<T> entities) where T : class
