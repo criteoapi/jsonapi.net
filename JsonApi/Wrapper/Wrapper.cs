@@ -47,8 +47,8 @@ namespace JsonApi.Wrapper
         }
 
         /// <summary>
-        /// Get policy for a type. Policy will be created using default asserts if type
-        /// has not been configured explicitly. The result will be cached. 
+        /// Wrapping is driven by a policy. Get policy for a type. Policy will be created 
+        /// on the fly if type has not been configured explicitly. The result is cached. 
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
@@ -63,20 +63,29 @@ namespace JsonApi.Wrapper
             return TypeConfigs[type];
         }
 
-        private static Resource<T> ApplyPolicy<T>(Resource<T> resource, IPolicy policy) where T : class
+        /// <summary>
+        /// Apply a policy to an entity to create a resource. 
+        /// </summary>
+        /// <typeparam name="T">Type of entity being converted.</typeparam>
+        /// <param name="entity">Entity being converted.</param>
+        /// <param name="policy">Policy to apply</param>
+        /// <returns>Resource that was created.</returns>
+        private static Resource<T> ApplyPolicy<T>(T entity, IPolicy policy) where T : class
         {
-            var entity = resource.Attributes;
-            resource.Type = policy.ResourceType(entity);
-            resource.Id = policy.ResourceIdentity(entity);
-            resource.Links = (Links)policy.ResourceLinks(entity);
-            resource.Meta = (Meta)policy.ResourceMeta(entity);
+            var resource = new Resource<T>(entity)
+            {
+                Type = policy.ResourceType(entity),
+                Id = policy.ResourceIdentity(entity),
+                Links = (Links) policy.ResourceLinks(entity),
+                Meta = (Meta) policy.ResourceMeta(entity)
+            };
             return resource;
         }
 
         public IResourceEnvelope<T> Wrap<T>(T entity) where T : class
         {
             var policy = GetOrCreatePolicy(typeof(T));
-            var envelope = new ResourceEnvelope<T>(ApplyPolicy(new Resource<T>(entity), policy));
+            var envelope = new ResourceEnvelope<T>(ApplyPolicy(entity, policy));
 
             return envelope;
         }
@@ -85,7 +94,7 @@ namespace JsonApi.Wrapper
         {
             var policy = GetOrCreatePolicy(typeof(T)); // TODO: handle missing type: generate new policy
 
-            var envelope = new CollectionEnvelope<T>(entities, entity => ApplyPolicy(new Resource<T>(entity), policy));
+            var envelope = new CollectionEnvelope<T>(entities, entity => ApplyPolicy(entity, policy));
             if (size >= 0) envelope.Meta["count"] = size; // Do not enumerate all entities
 
             return envelope;
@@ -93,7 +102,7 @@ namespace JsonApi.Wrapper
 
         public IErrorsEnvelope Errors(IEnumerable<ApiError> entities)
         {
-            throw new NotImplementedException();
+            return new ApiErrorsEnvelope {Errors = entities};
         }
 
         public T Unwrap<T>(Resource<T> resource) where T : class
