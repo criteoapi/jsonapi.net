@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using System;
+using JsonApi.Envelope;
+using JsonApi.Wrapper;
+using NUnit.Framework;
 
 /* Serialization
  * - links
@@ -38,6 +41,14 @@ namespace JsonApiTests
         public void SetUp()
         {
             
+        }
+
+        [Test]
+        public void Errors_NoErrors_Exception()
+        {
+            var wrapper = WrapperBuilder.WithServer("").Build();
+
+            Assert.Throws<ArgumentException>(() => wrapper.Errors(new ApiError[0]));
         }
     }
 }

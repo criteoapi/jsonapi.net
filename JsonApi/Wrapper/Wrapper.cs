@@ -102,6 +102,8 @@ namespace JsonApi.Wrapper
 
         public IErrorsEnvelope Errors(IEnumerable<ApiError> entities)
         {
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
+            if (!entities.Any()) throw new ArgumentException(nameof(entities));
             return new ApiErrorsEnvelope {Errors = entities};
         }
 
