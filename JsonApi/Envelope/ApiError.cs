@@ -40,7 +40,8 @@ namespace JsonApi.Envelope
         /// * Path uses the segment name to identify an invalid request URI path segment.
         /// * Query uses the name of the query parameter to identify a malformed parameter.
         /// </summary>
-        public Dictionary<string, string> Source { get; private set; }
+        public Dictionary<string, string> Source => _source ?? (_source = new Dictionary<string, string>());
+        private Dictionary<string, string> _source;
 
         /// <summary>
         /// Create a new ApiError object.
@@ -53,22 +54,6 @@ namespace JsonApi.Envelope
             Code = code;
             Status = status;
             Detail = detail;
-        }
-
-        /// <summary>
-        /// Add a source key value pair to the dictionary.
-        /// </summary>
-        /// <param name="key">Location type (e.g. header, pointer, path, or query).</param>
-        /// <param name="value">Type specific location identifier.</param>
-        private void AddSource(string key, string value)
-        {
-            if (Source == null)
-            {
-                Source = new Dictionary<string, string>();
-            }
-
-            if (key == null) throw new ArgumentNullException(nameof(key));
-            Source[key] = value ?? throw new ArgumentNullException(nameof(value));
         }
     }
 }

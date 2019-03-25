@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using JsonApi.Envelope;
 using JsonApi.Wrapper;
 using NUnit.Framework;
@@ -49,6 +50,24 @@ namespace JsonApiTests
             var wrapper = WrapperBuilder.WithServer("").Build();
 
             Assert.Throws<ArgumentException>(() => wrapper.Errors(new ApiError[0]));
+        }
+
+        [Test]
+        public void Errors_OneError_IsWrapped()
+        {
+            var wrapper = WrapperBuilder.WithServer("").Build();
+            var apiError = new ApiError("internal", "400", "detail");
+            apiError.Source["pointer"] = "it/is/here";
+            apiError.Source["header"] = "and/here";
+            var envelope = wrapper.Errors(new[] {apiError});
+
+            var e0 = envelope.Errors.ElementAt(0);
+
+            Assert.That(e0.Code, Is.EqualTo("internal"));
+            Assert.That(e0.Status, Is.EqualTo("400"));
+            Assert.That(e0.Detail, Is.EqualTo("detail"));
+            Assert.That(e0.Source, Contains.Key("pointer"));
+            Assert.That(e0.Source["header"], Is.EqualTo("and/here"));
         }
     }
 }
