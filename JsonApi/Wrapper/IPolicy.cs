@@ -23,7 +23,7 @@ namespace JsonApi.Wrapper
         string ResourceIdentity(object obj);
 
         /// <summary>
-        /// Return a table of links for the POCO based on the Link policies.
+        /// Return a table of links for the POCO based on the Link policies or null.
         /// </summary>
         /// <param name="obj">entity whose links are returned</param>
         /// <param name="baseURI">optional base URI to create absolute links</param>
@@ -31,7 +31,7 @@ namespace JsonApi.Wrapper
         IDictionary<string, string> ResourceLinks(object obj, string baseURI = null);
 
         /// <summary>
-        /// Return a table of meta information for the POCO based on the Meta policies.
+        /// Return a table of meta information for the POCO based on the Meta policies or null.
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>

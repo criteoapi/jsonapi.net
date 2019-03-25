@@ -12,7 +12,7 @@ namespace JsonApiTests
         [Test]
         public void WrapperBuilder_MinimalBuilder_ServerPathSet()
         {
-            var wrapper = WrapperBuilder.WithServer(HttpsExampleCom).Build();
+            var wrapper = (Wrapper)WrapperBuilder.WithServer(HttpsExampleCom).Build();
 
             Assert.That(wrapper.ServerPath, Is.EqualTo(HttpsExampleCom));
         }
@@ -20,7 +20,7 @@ namespace JsonApiTests
         [Test]
         public void WithDefaultConfig_AllPolicyAsserts_NoException()
         {
-            Wrapper wrapper = WrapperBuilder.WithServer(HttpsExampleCom).WithDefaultConfig(p =>
+            IWrapper wrapper = WrapperBuilder.WithServer(HttpsExampleCom).WithDefaultConfig(p =>
             {
                 p.CamelCasedNames();
                 p.HideDefaults();

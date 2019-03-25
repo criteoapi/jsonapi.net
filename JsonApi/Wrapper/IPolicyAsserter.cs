@@ -2,6 +2,8 @@
 {
     public interface IPolicyAsserter
     {
+        IPolicyAsserter Copy();
+
         #region Type and identity policies
 
         /// <summary>
@@ -24,9 +26,9 @@
         void WithType(string name);
 
         /// <summary>
-        /// explicitly define the attribute that holds the id.
+        /// explicitly define the attribute(s) that holds the id.
         /// </summary>
-        void WithId(string name);
+        void WithId(params string[] name);
 
         #endregion
 

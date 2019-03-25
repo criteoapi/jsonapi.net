@@ -23,7 +23,7 @@ namespace JsonApiTests
 
         // Private fields will not be marshaled
         private string PrivateProperty { get; set; } = "hidden";   // hide - not public
-        private string PrivateField = "hidden";            // hide - not public
+        private string _privateField = "hidden";            // hide - not public - IGNORE WARNING
     }
 
     public struct Address {

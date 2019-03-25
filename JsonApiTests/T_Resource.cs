@@ -12,7 +12,6 @@ namespace JsonApiTests
         // building a wrapper manually.
         private Person _person1;
         private Person _person2;
-        private ResourceEnvelope<Person> _envelope;
 
         [SetUp]
         public void Setup()
@@ -38,14 +37,6 @@ namespace JsonApiTests
                     DefaultClass = null
                 }
             };
-            // _person1.ReferenceLoopManager = _person1;
-            var data = new Resource<Person>(_person2)
-            {
-                Type = "people",
-                Id = "2",
-            };
-            // Create an envelope
-            _envelope = new ResourceEnvelope<Person>(data);
         }
 
         [Test]
@@ -84,12 +75,16 @@ namespace JsonApiTests
         public void Wrapper_WrapPerson_IdAndTypeSet(Person p)
         {
             Assume.That(p, Is.Not.Null);
+            IWrapper wrapper = WrapperBuilder
+                .WithServer("http://api.example.com")
+                .WithDefaultConfig(null)
+                .WithTypeConfig<Person>(x => x.WithId("Id"))
+                .Build();
 
-            Wrapper wrapper = WrapperBuilder.WithServer("http://api.example.com").Build();
             var rep = wrapper.Wrap(p);
             Resource<Person> rp = rep.Data;
 
-            var expectedType = typeof(Person).Name.ToPlural().ToHyphenCase();
+            var expectedType = typeof(Person).Name.ToPlural().ToHyphenCase(); // people
             Assert.That(rp.Type, Is.EqualTo(expectedType));
             var expectedId = p.Id.ToString();
             Assert.That(rp.Id, Is.EqualTo(expectedId));

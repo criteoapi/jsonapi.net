@@ -12,11 +12,13 @@ namespace JsonApi.Envelope
         /// <summary>
         /// Create a resource that holds a POCO object for serialization
         /// </summary>
-        /// <param name="poco">The object to be held</param>
-        public Resource(T poco)
+        /// <param name="attributes">The object to be held</param>
+        [JsonConstructor]
+        public Resource(T attributes)
         {
             // Resource is not responsible for setting Type, Id, .... That is done in Wrapper
-            Attributes = poco ?? throw new ArgumentNullException(nameof(poco));
+            // Attributes may be null if this is a reference resource (just type and id).
+            Attributes = attributes;
         }
 
         /// <summary>

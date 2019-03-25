@@ -1,51 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using JsonApi.Envelope;
 
 namespace JsonApi.Wrapper
 {
-    /// <summary>
-    /// Data Transfer Object shared by Policy and PolicyBuilder
-    /// </summary>
-    public class PolicyData
-    {
-        /// <summary>
-        /// The actual type of T
-        /// </summary>
-        public Type Type { get; }
-
-        /// <summary>
-        /// Server root to use for canonical URI of external resources
-        /// </summary>
-        public string ServerPath { get; set; }
-
-        /// <summary>
-        /// These members will be used to generate an id value.
-        /// </summary>
-        internal MemberInfo[] IdMembers;
-
-        /// <summary>
-        /// These members will be exported as attributes (excludes id)
-        /// </summary>
-        internal MemberInfo[] AttributeMembers;
-
-        /// <summary>
-        /// These members will be exported as attributes unless value matches object
-        /// </summary>
-        internal Dictionary<MemberInfo, object> _nonDefaultAttributeMembers;
-
-        /// <summary>
-        /// The mapping of member to attribute name.
-        /// </summary>
-        internal Dictionary<MemberInfo, string> _replaceName;
-
-        public PolicyData(Type type)
-        {
-            Type = type ?? throw new ArgumentNullException(nameof(type));
-        }
-    }
-
     /// <summary>
     /// Policy defines the wrapping behavior for a specific type. 
     /// </summary>
@@ -59,16 +18,14 @@ namespace JsonApi.Wrapper
         /// </summary>
         internal Policy(PolicyData policyData)
         {
-            _policyData = policyData;
+            _policyData = policyData ?? throw new ArgumentNullException(nameof(policyData));
         }
-
-        #region IPolicy implementation
 
         /// <param name="obj"></param>
         /// <inheritdoc cref="IPolicy"/>
         public string ResourceType(object obj)
         {
-            return _policyData.Type.Name;
+            return _policyData.TypeName;
         }
 
         /// <summary>
@@ -78,7 +35,7 @@ namespace JsonApi.Wrapper
         /// <returns>A string that will act as the type value.</returns>
         public string ResourceIdentity(object obj)
         {
-            if (_policyData.IdMembers.Length == 0) throw new InvalidOperationException($"Type {_policyData.Type} has no identifier members");
+            if (_policyData.IdMembers.Length == 0) throw new InvalidOperationException($"Type {obj.GetType()} has no configured identifier members");
 
             var first = _policyData.IdMembers[0].GetValue(obj).ToString();
             if (_policyData.IdMembers.Length == 1) return first;
@@ -95,7 +52,7 @@ namespace JsonApi.Wrapper
         {
             baseUri = _policyData.ServerPath ?? baseUri ?? "";
             if (!string.IsNullOrEmpty(baseUri)) baseUri += "/";
-            var links = new Dictionary<string, string>();
+            var links = new Links();
 
             // TODO: make this conditional
             links.Add("canonical", $"{baseUri}{ResourceType(obj)}/{ResourceIdentity(obj)}");
@@ -110,10 +67,9 @@ namespace JsonApi.Wrapper
         /// <returns>Dictionary of metadata names mapped to object values</returns>
         public IDictionary<string, object> ResourceMeta(object obj)
         {
-            var meta = new Dictionary<string, object>();
+            var meta = new Meta();
 
-            // TODO: future use for ETAG, creation date, etc. 
-            meta.Add("meta", "data");
+            meta.Add("meta", "data"); // TODO: future use for ETAG, creation date, etc. 
 
             return meta.Count > 0 ? meta : null;
         }
@@ -128,7 +84,10 @@ namespace JsonApi.Wrapper
         {
             throw new NotImplementedException();
         }
-        #endregion
 
+        public IPolicyAsserter CopyAsserter()
+        {
+            return _policyData.Asserter.Copy();
+        }
     }
 }

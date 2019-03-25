@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using JsonApi.Envelope;
 using Newtonsoft.Json;
@@ -64,16 +65,11 @@ namespace JsonApiTests
         }
 
         [Test]
-        public void DeserializeObject_MinimalDocument_NoDataLinksMeta()
+        public void DeserializeObject_MinimalDocument_NoDataLinksMetaThrows()
         {
             // Arrange, Act, Assert
             var test = _minimalDoc;
-            var result = JsonConvert.DeserializeObject<ResourceEnvelope<Attributes>>(test);
-
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Data, Is.Null);
-            Assert.That(result.Links, Is.Null);
-            Assert.That(result.Meta, Is.Null);
+            Assert.Throws<ArgumentNullException>(() => JsonConvert.DeserializeObject<ResourceEnvelope<Attributes>>(test));
         }
 
         [Test]

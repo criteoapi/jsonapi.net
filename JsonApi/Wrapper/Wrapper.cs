@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using JsonApi.Envelope;
 
 namespace JsonApi.Wrapper
@@ -12,7 +13,7 @@ namespace JsonApi.Wrapper
     /// <seealso cref="WrapperBuilder"/>
     public sealed class Wrapper : IWrapper, IUnwrapper
     {
-        private static Type _defaultType = typeof(object);
+        private static readonly Type DefaultType = typeof(object);
 
         /// <summary>
         /// The default wrapper. 
@@ -22,12 +23,12 @@ namespace JsonApi.Wrapper
         /// <summary>
         /// Generic configuration to be applied to types as a default behavior.
         /// </summary>
-        internal IPolicy DefaultTypeConfig => TypeConfigs[_defaultType];
+        internal IPolicy DefaultTypeConfig => TypeConfigs[DefaultType];
 
         /// <summary>
-        /// Resource type specific configuration.
+        /// Resource type specific configuration.  Used as a cache for newly created policies.
         /// </summary>
-        internal IReadOnlyDictionary<Type, IPolicy> TypeConfigs { get; }
+        internal IDictionary<Type, IPolicy> TypeConfigs { get; }
 
         /// <summary>
         /// The default root of the API used to compute resource paths.
@@ -41,37 +42,56 @@ namespace JsonApi.Wrapper
         /// </summary>
         internal Wrapper(string serverPath, Dictionary<Type, IPolicy> typeConfigs)
         {
-            // builder will ensure that serverPath is non-empty
-            ServerPath = serverPath;
-            // builder type will ensure that the null key of the
-            // dictionary is populated with a default type config
-            TypeConfigs = typeConfigs;
+            ServerPath = serverPath; // builder guarantees that serverPath is non-empty
+            TypeConfigs = typeConfigs; // builder guarantees a default type config
         }
 
-        private IPolicy GetPolicy(Type type)
+        /// <summary>
+        /// Get policy for a type. Policy will be created using default asserts if type
+        /// has not been configured explicitly. The result will be cached. 
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private IPolicy GetOrCreatePolicy(Type type)
         {
-            return TypeConfigs.TryGetValue(type, out var policy) ? policy : TypeConfigs[_defaultType];
+            if (!TypeConfigs.ContainsKey(type))
+            {
+                var asserter = ((Policy) TypeConfigs[DefaultType]).CopyAsserter();
+                TypeConfigs[type] = new PolicyBuilder(type, asserter).Build();
+            }
+
+            return TypeConfigs[type];
+        }
+
+        private static Resource<T> ApplyPolicy<T>(Resource<T> resource, IPolicy policy) where T : class
+        {
+            var entity = resource.Attributes;
+            resource.Type = policy.ResourceType(entity);
+            resource.Id = policy.ResourceIdentity(entity);
+            resource.Links = (Links)policy.ResourceLinks(entity);
+            resource.Meta = (Meta)policy.ResourceMeta(entity);
+            return resource;
         }
 
         public IResourceEnvelope<T> Wrap<T>(T entity) where T : class
         {
-            var policy = GetPolicy(typeof(T));
-
-            var envelope = new ResourceEnvelope<T>(entity);
-            envelope.Data.Type = policy.ResourceType(entity);
-            envelope.Data.Id = policy.ResourceIdentity(entity);
-            envelope.Data.Links = (Links) policy.ResourceLinks(entity);
-            envelope.Data.Meta = (Meta) policy.ResourceMeta(entity);
+            var policy = GetOrCreatePolicy(typeof(T));
+            var envelope = new ResourceEnvelope<T>(ApplyPolicy(new Resource<T>(entity), policy));
 
             return envelope;
         }
 
-        public IResourceCollectionEnvelope<T> Wrap<T>(IEnumerable<T> entities) where T : class
+        public IResourceCollectionEnvelope<T> WrapAll<T>(IEnumerable<T> entities, int size = -1) where T : class
         {
-            throw new NotImplementedException();
+            var policy = GetOrCreatePolicy(typeof(T)); // TODO: handle missing type: generate new policy
+
+            var envelope = new CollectionEnvelope<T>(entities, entity => ApplyPolicy(new Resource<T>(entity), policy));
+            if (size >= 0) envelope.Meta["count"] = size; // Do not enumerate all entities
+
+            return envelope;
         }
 
-        public IErrorsEnvelope Wrap(IEnumerable<ApiError> entities)
+        public IErrorsEnvelope Errors(IEnumerable<ApiError> entities)
         {
             throw new NotImplementedException();
         }

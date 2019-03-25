@@ -34,17 +34,6 @@ namespace JsonApi.Wrapper
         private readonly Type _defaultType = typeof(object);
 
         /// <summary>
-        /// Default policy assertions if not specified by <see cref="WithDefaultConfig"/>
-        /// </summary>
-        private Action<IPolicyAsserter> _baseConfig = p =>
-        {
-            p.PluralTypes();
-            p.CamelCasedNames();
-            p.HideDefaults();
-            p.WithId("Id"); // TODO: EndsWith("Id") ? 
-        };
-
-        /// <summary>
         /// Builders for resource type specific configuration. The same builder may
         /// be reused by multiple calls to <see cref="WithTypeConfig{T}"/>.
         /// </summary>
@@ -66,9 +55,7 @@ namespace JsonApi.Wrapper
             ServerPath = serverPath;
 
             // Add a default policy to apply as a base for other types
-            PolicyBuilders[_defaultType] = new PolicyBuilder(_defaultType);
-            var asserter = PolicyBuilders[_defaultType].Asserter;
-            _baseConfig(asserter);
+            PolicyBuilders[_defaultType] = new PolicyBuilder();
         }
 
         public static IExpectDefaultConfigOrTypeConfigWrapperBuilder WithServer(string serverPath)
@@ -77,34 +64,32 @@ namespace JsonApi.Wrapper
             return new WrapperBuilder(serverPath);
         }
 
-        public IExpectTypeConfigWrapperBuilder WithDefaultConfig(Action<IPolicyAsserter> policyAsserter)
+        public IExpectTypeConfigWrapperBuilder WithDefaultConfig(Action<IPolicyAsserter> policyAsserts)
         {
-            if (!PolicyBuilders.ContainsKey(_defaultType)) // add to existing policy if possible
+            var tt = _defaultType;
+            if (!PolicyBuilders.ContainsKey(tt)) // add to existing policy if possible
             {
-                PolicyBuilders[_defaultType] = new PolicyBuilder(_defaultType);
+                PolicyBuilders[tt] = new PolicyBuilder();
             }
-            IPolicyAsserter asserter = PolicyBuilders[_defaultType].Asserter;
-
-            _baseConfig = policyAsserter; // save base config to apply to specific types
-            policyAsserter(asserter);
+            // Save this configuration to the configuration for 'object' as a default for other types
+            policyAsserts?.Invoke(PolicyBuilders[tt].Asserter);
             return this;
         }
 
-        public IExpectTypeConfigWrapperBuilder WithTypeConfig<T>(Action<IPolicyAsserter> policyAsserter)
+        public IExpectTypeConfigWrapperBuilder WithTypeConfig<T>(Action<IPolicyAsserter> policyAsserts)
         {
             var tt = typeof(T);
             if (!PolicyBuilders.ContainsKey(tt))
             {
-                PolicyBuilders[tt] = new PolicyBuilder(typeof(T));
+                var initialAsserts = PolicyBuilders[_defaultType].Asserter ?? throw new NullReferenceException("Asserter");
+                PolicyBuilders[tt] = new PolicyBuilder(typeof(T), initialAsserts);
             }
-            IPolicyAsserter asserter = PolicyBuilders[tt].Asserter;
 
-            _baseConfig(asserter);
-            policyAsserter(asserter);
+            policyAsserts?.Invoke(PolicyBuilders[tt].Asserter);
             return this;
         }
 
-        public Wrapper Build()
+        public IWrapper Build()
         {
             //
             // Build TypeConfigs from the PolicyBuilders
@@ -122,12 +107,12 @@ namespace JsonApi.Wrapper
     public interface IExpectDefaultConfigOrTypeConfigWrapperBuilder :
         IExpectTypeConfigWrapperBuilder
     {
-        IExpectTypeConfigWrapperBuilder WithDefaultConfig(Action<IPolicyAsserter> policyAsserter);
+        IExpectTypeConfigWrapperBuilder WithDefaultConfig(Action<IPolicyAsserter> policyAsserts);
     }
 
     public interface IExpectTypeConfigWrapperBuilder
     {
-        IExpectTypeConfigWrapperBuilder WithTypeConfig<T>(Action<IPolicyAsserter> policyAsserter);
-        Wrapper Build();
+        IExpectTypeConfigWrapperBuilder WithTypeConfig<T>(Action<IPolicyAsserter> policyAsserts);
+        IWrapper Build();
     }
 }

@@ -55,5 +55,13 @@ namespace JsonApi.Wrapper
                 BindingFlags.Public | BindingFlags.Instance,
                 (info, _) => filter(info), null);
         }
+
+        public static MemberInfo FindMemberInfo(this Type type, string name)
+        {
+            var members = type.GetMember(name, 
+                MemberTypes.Field | MemberTypes.Property,
+                BindingFlags.Public | BindingFlags.Instance);
+            return members.Length > 0 ? members[0] : null;
+        }
     }
 }
