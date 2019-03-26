@@ -82,7 +82,7 @@ namespace JsonApi.Wrapper
             return resource;
         }
 
-        public IResourceEnvelope<T> Wrap<T>(T entity) where T : class
+        public ResourceEnvelope<T> Wrap<T>(T entity) where T : class
         {
             var policy = GetOrCreatePolicy(typeof(T));
             var envelope = new ResourceEnvelope<T>(ApplyPolicy(entity, policy));
@@ -90,7 +90,7 @@ namespace JsonApi.Wrapper
             return envelope;
         }
 
-        public IResourceCollectionEnvelope<T> WrapAll<T>(IEnumerable<T> entities, int size = -1) where T : class
+        public CollectionEnvelope<T> WrapAll<T>(IEnumerable<T> entities, int size = 0) where T : class
         {
             var policy = GetOrCreatePolicy(typeof(T)); // TODO: handle missing type: generate new policy
 
@@ -100,7 +100,7 @@ namespace JsonApi.Wrapper
             return envelope;
         }
 
-        public IErrorsEnvelope Errors(IEnumerable<ApiError> entities)
+        public ApiErrorsEnvelope Errors(IEnumerable<ApiError> entities)
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
             if (!entities.Any()) throw new ArgumentException(nameof(entities));

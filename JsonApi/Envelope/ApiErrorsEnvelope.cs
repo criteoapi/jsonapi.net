@@ -9,7 +9,7 @@ namespace JsonApi.Envelope
     /// ApiErrorsEnvelope encapsulates a response with errors.
     /// </summary>
     /// <typeparam name="T">The type of Resource being held.</typeparam>
-    public class ApiErrorsEnvelope : Envelope, IErrorsEnvelope
+    public class ApiErrorsEnvelope : Envelope, IApiErrorsEnvelope
     {
         /// <summary>
         /// Errors detected by the server.

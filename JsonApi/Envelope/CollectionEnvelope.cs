@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace JsonApi.Envelope
 {
-    public class CollectionEnvelope<T> : Envelope, IResourceCollectionEnvelope<T> where T : class
+    public class CollectionEnvelope<T> : Envelope, ICollectionEnvelope<T> where T : class
     {
         private readonly IEnumerable<T> _entities;
 

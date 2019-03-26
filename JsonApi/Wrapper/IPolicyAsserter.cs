@@ -7,6 +7,12 @@
         #region Type and identity policies
 
         /// <summary>
+        /// use named server root for this type, rather than the default server root
+        /// </summary>
+        /// <param name="serverPath">absolute server root</param>
+        void WithServerRoot(string serverPath);
+
+        /// <summary>
         /// use lowercase with hyphens instead of `nameof(T)`, for example use
         /// `hyphen-cased` if the type name is `HyphenCased`.
         /// </summary>

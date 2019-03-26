@@ -38,7 +38,9 @@ namespace JsonApi.Wrapper
             if (_policyData.IdMembers.Length == 0) throw new InvalidOperationException($"Type {obj.GetType()} has no configured identifier members");
 
             var first = _policyData.IdMembers[0].GetValue(obj).ToString();
-            if (_policyData.IdMembers.Length == 1) return first;
+            if (_policyData.IdMembers.Length == 1)
+                return first;
+
             return _policyData.IdMembers.Aggregate(first, (prev, m) => prev + "." + m.GetValue(obj));
         }
 
@@ -50,12 +52,17 @@ namespace JsonApi.Wrapper
         /// <returns>Dictionary of links mapped to URI values</returns>
         public IDictionary<string, string> ResourceLinks(object obj, string baseUri = null)
         {
-            baseUri = _policyData.ServerPath ?? baseUri ?? "";
-            if (!string.IsNullOrEmpty(baseUri)) baseUri += "/";
+            if (_policyData.LinkNames.Count == 0)
+                return null;
+
+            baseUri = _policyData.ServerRoot ?? baseUri ?? "";
+            if (!string.IsNullOrEmpty(baseUri))
+                baseUri += "/";
+
             var links = new Links();
 
-            // TODO: make this conditional
-            links.Add("canonical", $"{baseUri}{ResourceType(obj)}/{ResourceIdentity(obj)}");
+            if (_policyData.LinkNames.ContainsKey("canonical"))
+                links.Add("canonical", $"{baseUri}{ResourceType(obj)}/{ResourceIdentity(obj)}");
 
             return links.Count > 0 ? links : null;
         }
@@ -69,7 +76,7 @@ namespace JsonApi.Wrapper
         {
             var meta = new Meta();
 
-            meta.Add("meta", "data"); // TODO: future use for ETAG, creation date, etc. 
+            // meta.Add("meta", "data"); // TODO: future use for ETAG, creation date, etc. 
 
             return meta.Count > 0 ? meta : null;
         }

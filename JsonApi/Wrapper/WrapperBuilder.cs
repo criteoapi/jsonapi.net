@@ -47,6 +47,18 @@ namespace JsonApi.Wrapper
 
 
         /// <summary>
+        /// Declare a builder for this API root.
+        /// Static entry point into the wrapper builder class.
+        /// </summary>
+        /// <param name="serverPath"></param>
+        /// <returns></returns>
+        public static IExpectDefaultConfigOrTypeConfigWrapperBuilder WithServer(string serverPath)
+        {
+            if (serverPath == null) throw new ArgumentNullException(nameof(serverPath));
+            return new WrapperBuilder(serverPath);
+        }
+
+        /// <summary>
         /// WrapperBuilder ctor is private. Use static entry method <see cref="WithServer"/>.
         /// </summary>
         /// <param name="serverPath"></param>
@@ -55,13 +67,9 @@ namespace JsonApi.Wrapper
             ServerPath = serverPath;
 
             // Add a default policy to apply as a base for other types
-            PolicyBuilders[_defaultType] = new PolicyBuilder();
-        }
-
-        public static IExpectDefaultConfigOrTypeConfigWrapperBuilder WithServer(string serverPath)
-        {
-            if (serverPath == null) throw new ArgumentNullException(nameof(serverPath));
-            return new WrapperBuilder(serverPath);
+            var policyBuilder = new PolicyBuilder();
+            policyBuilder.Asserter.WithServerRoot(serverPath);
+            PolicyBuilders[_defaultType] = policyBuilder;
         }
 
         public IExpectTypeConfigWrapperBuilder WithDefaultConfig(Action<IPolicyAsserter> policyAsserts)
@@ -91,7 +99,6 @@ namespace JsonApi.Wrapper
 
         public IWrapper Build()
         {
-            //
             // Build TypeConfigs from the PolicyBuilders
             Dictionary<Type, IPolicy> typeConfigs = new Dictionary<Type, IPolicy>();
             foreach (KeyValuePair<Type, PolicyBuilder> policyBuilder in PolicyBuilders)

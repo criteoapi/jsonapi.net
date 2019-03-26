@@ -15,6 +15,6 @@ namespace JsonApi.Envelope
         {
         }
 
-        public Resource<T> Data { get; }
+        public Resource<T> Data { get; }        
     }
 }

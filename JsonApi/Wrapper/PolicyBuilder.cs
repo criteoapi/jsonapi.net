@@ -108,6 +108,9 @@ namespace JsonApi.Wrapper
                 _asserts.ForEach(a => a.Execute(policyData));
             }
 
+
+            public void WithServerRoot(string name) => _asserts.Add(new Assertion(AssertionCategory.Data, nameof(WithServerRoot), name));
+
             public void HyphenCasedTypes() => _asserts.Add(new Assertion(AssertionCategory.Root, nameof(HyphenCasedTypes)));
 
             public void PluralTypes() => _asserts.Add(new Assertion(AssertionCategory.Data, nameof(PluralTypes)));
@@ -154,6 +157,10 @@ namespace JsonApi.Wrapper
                     // TODO: implement assertions to modify PolicyData
                     switch (Name)
                     {
+                        case nameof(WithServerRoot):
+                            policyData.ServerRoot = Args[0];
+                            break;
+
                         case nameof(PluralTypes):
                             policyData.PluralTypes = true;
                             break;

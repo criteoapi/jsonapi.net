@@ -10,44 +10,21 @@ namespace JsonApi.Wrapper
     public class PolicyData
     {
         /// <summary>
-        /// An explicit type name to use
-        /// </summary>
-        public string TypeName;
-
-        /// <summary>
         /// The actual type of T
         /// </summary>
         public Type Type { get; }
 
+        #region Type and Identity Policy
+
         /// <summary>
         /// Server root to use for canonical URI of external resources, or null
         /// </summary>
-        public string ServerPath { get; set; }
+        public string ServerRoot { get; set; }
 
         /// <summary>
-        /// These members will be used to generate an id value.
+        /// An explicit type name to use
         /// </summary>
-        internal MemberInfo[] IdMembers = {};
-
-        /// <summary>
-        /// These members will be exported as attributes (excludes id)
-        /// </summary>
-        internal MemberInfo[] AttributeMembers = {};
-
-        /// <summary>
-        /// These members will be exported as attributes unless value matches object
-        /// </summary>
-        internal Dictionary<MemberInfo, bool> HideIfDefault = new Dictionary<MemberInfo, bool>();
-
-        /// <summary>
-        /// The mapping of member to attribute name.
-        /// </summary>
-        internal Dictionary<MemberInfo, string> ReplaceName = new Dictionary<MemberInfo, string>();
-
-        /// <summary>
-        /// The links to generate in the links section of the resource. 
-        /// </summary>
-        public Dictionary<string, bool> LinkNames = new Dictionary<string, bool>();
+        public string TypeName;
 
         /// <summary>
         /// Use hyphen_case for the type name
@@ -60,9 +37,44 @@ namespace JsonApi.Wrapper
         public bool PluralTypes;
 
         /// <summary>
+        /// These members will be used to generate an id value.
+        /// </summary>
+        internal MemberInfo[] IdMembers = { };
+
+        #endregion
+
+        #region Naming Policy
+
+        /// <summary>
+        /// These members will be exported as attributes (excludes id)
+        /// </summary>
+        internal MemberInfo[] AttributeMembers = {};
+
+        /// <summary>
         /// Convert names not in <see cref="ReplaceName"/> with lower case camelcase version.
         /// </summary>
         public bool CamelCasedNames;
+
+        /// <summary>
+        /// The mapping of member to attribute name.
+        /// </summary>
+        internal Dictionary<MemberInfo, string> ReplaceName = new Dictionary<MemberInfo, string>();
+
+        #endregion
+
+        // Suppression Policy
+
+        /// <summary>
+        /// These members will be exported as attributes unless value matches object
+        /// </summary>
+        internal Dictionary<MemberInfo, bool> HideIfDefault = new Dictionary<MemberInfo, bool>();
+
+        // Link and Meta Policy
+
+        /// <summary>
+        /// The links to generate in the links section of the resource. 
+        /// </summary>
+        public Dictionary<string, bool> LinkNames = new Dictionary<string, bool>();
 
         /// <summary>
         /// The asserter against which the policies were made.

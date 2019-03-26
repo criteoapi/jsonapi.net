@@ -44,7 +44,7 @@ namespace JsonApi.Envelope
     /// a collection of resources.
     /// </summary>
     /// <typeparam name="T">The type wrapped by the resource.</typeparam>
-    public interface IResourceCollectionEnvelope<T> : IEnvelope where T : class
+    public interface ICollectionEnvelope<T> : IEnvelope where T : class
     {
         /// <summary>
         /// The primary data being held by the collection envelope
@@ -57,7 +57,7 @@ namespace JsonApi.Envelope
     /// An interface that defines the behavior of an envelope holding
     /// one or more errors. 
     /// </summary>
-    public interface IErrorsEnvelope : IEnvelope
+    public interface IApiErrorsEnvelope : IEnvelope
     {
         IEnumerable<ApiError> Errors { get; }
     }

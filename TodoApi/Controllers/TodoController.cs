@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JsonApi.Envelope;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Models;
+using JsonApi.Wrapper;
 
 namespace TodoApi.Controllers
 {
@@ -11,6 +13,12 @@ namespace TodoApi.Controllers
     [ApiController]
     public class TodoController : ControllerBase
     {
+        private static readonly IWrapper wrapper = WrapperBuilder
+            .WithServer("https://localhost:44310/api/")
+            .WithDefaultConfig(p => p.HyphenCasedTypes())
+            .WithTypeConfig<TodoItem>(p => p.WithType("todo"))
+            .Build();
+        
         private readonly TodoContext _context;
 
         public TodoController(TodoContext context)
@@ -25,17 +33,26 @@ namespace TodoApi.Controllers
                 _context.SaveChanges();
             }
         }
+/*
 
         // GET api/Todo
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodoItems()
         {
             return await _context.TodoItems.ToListAsync();
+        }*/
+
+        // GET api/Todo
+        [HttpGet]
+        public async Task<ActionResult<CollectionEnvelope<TodoItem>>> GetTodoItems2()
+        {
+            var items = await _context.TodoItems.ToListAsync();
+            return wrapper.WrapAll(items);
         }
 
         // GET api/Todo/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TodoItem>> GetTodoItem(long id)
+        public async Task<ActionResult<IResourceEnvelope<TodoItem>>> GetTodoItem(long id)
         {
             var todoItem = await _context.TodoItems.FindAsync(id);
 
@@ -44,7 +61,8 @@ namespace TodoApi.Controllers
                 return NotFound();
             }
 
-            return todoItem;
+            // return todoItem;
+            return wrapper.Wrap(todoItem);
         }
 
         // POST api/todo
