@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Models;
 using JsonApi.Wrapper;
+using Microsoft.AspNetCore.Routing;
 
 namespace TodoApi.Controllers
 {
@@ -13,17 +14,22 @@ namespace TodoApi.Controllers
     [ApiController]
     public class TodoController : ControllerBase
     {
-        private static readonly IWrapper wrapper = WrapperBuilder
-            .WithServer("https://localhost:44310/api/")
-            .WithDefaultConfig(p => p.HyphenCasedTypes())
-            .WithTypeConfig<TodoItem>(p => p.WithType("todo"))
-            .Build();
+        private readonly IWrapper _wrapper;
         
         private readonly TodoContext _context;
 
-        public TodoController(TodoContext context)
+        protected readonly LinkGenerator _linkGenerator;
+
+        public TodoController(TodoContext context, LinkGenerator linkGenerator)
         {
             _context = context;
+            _linkGenerator = linkGenerator;
+            var path = ""; // TODO
+            _wrapper = WrapperBuilder
+                .WithServer(path)
+                .WithDefaultConfig(p => p.HyphenCasedTypes())
+                .WithTypeConfig<TodoItem>(p => p.WithType("todo"))
+                .Build();
 
             if (_context.TodoItems.Count() == 0)
             {
@@ -47,7 +53,9 @@ namespace TodoApi.Controllers
         public async Task<ActionResult<CollectionEnvelope<TodoItem>>> GetTodoItems2()
         {
             var items = await _context.TodoItems.ToListAsync();
-            return wrapper.WrapAll(items);
+            var collectionEnvelope = _wrapper.WrapAll(items);
+            collectionEnvelope.Links["self"] = HttpContext.Request.Path;
+            return collectionEnvelope;
         }
 
         // GET api/Todo/5
@@ -62,7 +70,9 @@ namespace TodoApi.Controllers
             }
 
             // return todoItem;
-            return wrapper.Wrap(todoItem);
+            var envelope = _wrapper.Wrap(todoItem);
+            envelope.Links["self"] = HttpContext.Request.Path;
+            return envelope;
         }
 
         // POST api/todo

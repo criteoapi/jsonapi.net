@@ -43,17 +43,9 @@ namespace JsonApiTests
                 Id = "1"
             };
             // Create an envelope
-            _envelope = new ResourceEnvelope<Person>(data)
-            {
-                Links = new Links()
-                {
-                    ["self"] = "person/1" 
-                },
-                Meta = new Meta()
-                {
-                    ["released"] = "2019-03-05"
-                }
-            };
+            _envelope = new ResourceEnvelope<Person>(data);
+            _envelope.Links["self"] = "person/1";
+            _envelope.Meta["released"] = "2019-03-05";
         }
 
         [Test]
