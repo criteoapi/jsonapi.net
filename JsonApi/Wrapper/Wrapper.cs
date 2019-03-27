@@ -82,6 +82,12 @@ namespace JsonApi.Wrapper
             return resource;
         }
 
+        /// <summary>
+        /// Wrap a single resource into a JSON:API envelope
+        /// </summary>
+        /// <typeparam name="T">Resource type</typeparam>
+        /// <param name="entity">Entity being wrapped</param>
+        /// <returns>The resource envelope.</returns>
         public ResourceEnvelope<T> Wrap<T>(T entity) where T : class
         {
             var policy = GetOrCreatePolicy(typeof(T));
@@ -90,16 +96,27 @@ namespace JsonApi.Wrapper
             return envelope;
         }
 
+        /// <summary>
+        /// Wrap a resource collection into a JSON:API envelope
+        /// </summary>
+        /// <typeparam name="T">Resource type</typeparam>
+        /// <param name="entities">Entities being wrapped</param>
+        /// <returns>The collection envelope.</returns>
         public CollectionEnvelope<T> WrapAll<T>(IEnumerable<T> entities, int size = 0) where T : class
         {
             var policy = GetOrCreatePolicy(typeof(T)); // TODO: handle missing type: generate new policy
 
             var envelope = new CollectionEnvelope<T>(entities, entity => ApplyPolicy(entity, policy));
-            if (size >= 0) envelope.Meta["count"] = size; // Do not enumerate all entities
+            if (size > 0) envelope.Meta["count"] = size; // Do not enumerate all entities
 
             return envelope;
         }
 
+        /// <summary>
+        /// Wrap some API errors into a JSON:API envelope
+        /// </summary>
+        /// <param name="entities">Errors being wrapped</param>
+        /// <returns>The API Errors envelope.</returns>
         public ApiErrorsEnvelope Errors(IEnumerable<ApiError> entities)
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
